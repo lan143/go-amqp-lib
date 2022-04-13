@@ -1,4 +1,4 @@
-module go-amqp-lib
+module github.com/lan143/go-amqp-lib
 
 go 1.18
 
