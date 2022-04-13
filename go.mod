@@ -1,4 +1,4 @@
-module amqp-lib
+module go-amqp-lib
 
 go 1.18
 

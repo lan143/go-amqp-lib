@@ -1,4 +1,4 @@
-package amqp_lib
+package go_amqp_lib
 
 import (
 	"context"
