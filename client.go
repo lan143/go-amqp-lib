@@ -80,7 +80,10 @@ func (client *Client) CloseConsume(consume *Consume) error {
 }
 
 func (client *Client) Shutdown(ctx context.Context) {
-	for _, consume := range client.consumes {
+	var consumes []*Consume
+	copy(consumes, client.consumes)
+
+	for _, consume := range consumes {
 		err := client.CloseConsume(consume)
 		if err != nil {
 			log.Printf("amqp.shutdown.consume.(%s): %s", consume.QueueName, err.Error())
@@ -266,11 +269,9 @@ func (client *Client) handleReconnect() {
 						log.Printf("amqp.channel.error: %s", err.Error())
 						time.Sleep(1 * time.Second)
 					} else {
-						log.Printf("amqp.channel.restore: successful")
+						log.Printf("amqp.system-channel.restore: successful")
 
 						chClose = client.systemChannel.NotifyClose(make(chan *amqp.Error))
-
-						client.restoreConsumers()
 						client.setConnected(true)
 						break
 					}
@@ -335,18 +336,6 @@ func (client *Client) consumeInternal(consume *Consume) error {
 	)
 
 	return err
-}
-
-func (client *Client) restoreConsumers() {
-	var err error
-	for _, consume := range client.consumes {
-		err = client.consumeInternal(consume)
-		if err != nil {
-			log.Printf("amqp.consume.(%s).restore: %s", consume.QueueName, err.Error())
-		} else {
-			log.Printf("amqp.consume.(%s).restore: successful", consume.QueueName)
-		}
-	}
 }
 
 func NewClient() *Client {
