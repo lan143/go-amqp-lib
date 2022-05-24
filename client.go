@@ -13,7 +13,9 @@ import (
 type Client struct {
 	connection    *amqp.Connection
 	systemChannel *amqp.Channel
+
 	config        AmqpConfig
+	prefetchCount int
 
 	wg *sync.WaitGroup
 
@@ -31,10 +33,11 @@ type Consume struct {
 	Delivery                       <-chan amqp.Delivery
 }
 
-func (client *Client) Init(config AmqpConfig, wg *sync.WaitGroup) {
+func (client *Client) Init(config AmqpConfig, prefetchCount int, wg *sync.WaitGroup) {
 	log.Printf("amqp: init")
 
 	client.config = config
+	client.prefetchCount = prefetchCount
 	client.wg = wg
 }
 
@@ -304,7 +307,12 @@ func (client *Client) consumeInternal(consume *Consume) error {
 	var err error
 	consume.Channel, err = client.connection.Channel()
 	if err != nil {
-		return nil
+		return err
+	}
+
+	err = consume.Channel.Qos(client.prefetchCount, 0, false)
+	if err != nil {
+		return err
 	}
 
 	go client.handleConsumeChannelClose(consume)
